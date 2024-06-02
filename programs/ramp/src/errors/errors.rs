@@ -21,5 +21,11 @@ pub enum RampError {
     InvalidLstDecimals,
 
     #[msg("Invalid LST authorities. Make sure the token cannot be frozen.")]
-    InvalidLstAuthority
+    InvalidLstAuthority,
+
+    #[msg("Seller does not own any shares.")]
+    InvalidShareSeller,
+
+    #[msg("Seller does not have enough shares to sell.")]
+    InvalidShareBalance
 }

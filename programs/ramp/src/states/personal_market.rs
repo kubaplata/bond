@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use anchor_lang::prelude::*;
 use crate::states::Share;
 use crate::borsh::{BorshSerialize, BorshDeserialize};
+use crate::RampError;
 
 #[derive(Clone, BorshSerialize, BorshDeserialize)]
 pub enum BondingCurveMode {
@@ -90,7 +91,33 @@ impl PersonalMarket {
         Ok(())
     }
 
-    pub fn sub_share() {
+    pub fn sub_shares(
+        &mut self, 
+        shares: u64,
+        seller: Pubkey,
+    ) -> Result<()> {
+        self.total_shares -= shares;
 
+        let mut found_holder: bool = false;
+        for holder in self.holders.iter_mut() {
+            if holder.user == seller {
+                require!(
+                    holder.owned >= shares,
+                    RampError::InvalidShareBalance
+                );
+
+                holder.owned -= shares;
+                found_holder = true;
+
+                break;
+            }
+        }
+
+        require!(
+            found_holder,
+            RampError::InvalidShareSeller
+        );
+
+        Ok(())
     }
 }
