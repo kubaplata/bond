@@ -1,19 +1,15 @@
-use anchor_lang::{prelude::*, solana_program::program::invoke_signed};
+use anchor_lang::{prelude::*, solana_program::program::{invoke, invoke_signed}};
 use spl_stake_pool::{
-    find_withdraw_authority_program_address, instruction::{
-        create_token_metadata, 
-        initialize
-    }, 
-    state::{Fee, ValidatorList}, 
+    find_withdraw_authority_program_address, instruction::initialize,
+    state::Fee,
     ID as stake_pool_program_id
 };
 use crate::states::*;
 use anchor_spl::{
+    stake::Stake, 
     token::{
-        Token,
-        Mint
-    },
-    stake::Stake
+        Mint, Token, TokenAccount
+    }
 };
 use anchor_lang::solana_program::stake;
 use crate::errors::RampError;
@@ -24,6 +20,7 @@ pub fn create_personal_lst(
     ctx: Context<CreatePersonalLst>,
 ) -> Result<()> {
     let user = &mut ctx.accounts.user;
+    let stake_program = &mut ctx.accounts.stake_program;
     let stake_pool_program = &mut ctx.accounts.stake_pool_program;
     let stake_pool = &mut ctx.accounts.stake_pool;
     let ramp_user_account = &mut ctx.accounts.ramp_user_account;
@@ -32,17 +29,20 @@ pub fn create_personal_lst(
     let personal_lst_mint = &mut ctx.accounts.personal_lst_mint;
     let manager_pool_account = &mut ctx.accounts.manager_pool_account;
     let token_program = &mut ctx.accounts.token_program;
-
     let withdraw_authority = &mut ctx.accounts.withdraw_authority;
-    let (rederived_withdraw_authority, _) = find_withdraw_authority_program_address(
-        &stake_pool_program_id,
-        &stake_pool.key()
-    );
 
-    require!(
-        withdraw_authority.key() == rederived_withdraw_authority,
-        RampError::InvalidWithdrawAuthority
-    );
+
+    { // This is likely not needed since we check derivation path with Anchor.
+        let (rederived_withdraw_authority, _) = find_withdraw_authority_program_address(
+            &stake_pool_program_id,
+            &stake_pool.key()
+        );
+
+        require!(
+            withdraw_authority.key() == rederived_withdraw_authority,
+            RampError::InvalidWithdrawAuthority
+        );
+    }
 
     let initialize_stake_reserve_ix = stake::instruction::initialize(
         &stake_reserve.key(),
@@ -52,6 +52,16 @@ pub fn create_personal_lst(
         },
         &stake::state::Lockup::default()
     );
+
+    invoke(
+        &initialize_stake_reserve_ix, 
+        &[
+            stake_reserve.to_account_info(),
+            withdraw_authority.to_account_info(),
+            stake_pool_program.to_account_info(),
+            stake_program.to_account_info(),
+        ]
+    )?;
 
     let fee = Fee {
         denominator: 0,
@@ -78,8 +88,8 @@ pub fn create_personal_lst(
     );
 
     let signer_seeds = &[
-        &ramp_user_account.id.to_le_bytes(),
-        "".as_bytes(),
+        "user_account".as_bytes(),
+        &user.key().to_bytes(),
         &[ctx.bumps.ramp_user_account]
     ];
 
@@ -91,8 +101,8 @@ pub fn create_personal_lst(
             ramp_user_account.to_account_info(),
             validator_list.to_owned(),
             stake_reserve.to_owned(),
-            personal_lst_mint.to_owned(),
-            manager_pool_account.to_owned(),
+            personal_lst_mint.to_account_info(),
+            manager_pool_account.to_account_info(),
             token_program.to_account_info()
         ], 
         &[signer_seeds]
@@ -108,28 +118,48 @@ pub struct CreatePersonalLst<'info> {
     )]
     pub user: Signer<'info>,
 
+    // CHECK: This is safe. Checking program ID directly.
     #[account(
         mut,
         constraint = stake_pool_program.key() == stake_pool_program_id @ RampError::InvalidStakePoolProgram,
     )]
     pub stake_pool_program: AccountInfo<'info>,
 
+
     #[account(
-        mut,
         constraint = stake_program.key() == Stake::id() @ RampError::InvalidStakeProgram
     )]
     pub stake_program: Program<'info, Stake>,
     
+    // Initialize stake pool with fixed derivation path, so that there cannot be more than one 
+    // personal stake pool initialized via ramp per user.
     #[account(
-        mut,
+        init,
+        payer = user,
+        seeds = [
+            &user.key().to_bytes(),
+            "personal_stake_pool".as_bytes(),
+        ],
+        bump,
+        space = 8 + 1 + 3 * 32 + 1 + 5 * 32 + 3 * 8 + 48 + 16 + (1 + 16) + 2 * 8 + 32,
+        owner = stake_pool_program_id,
     )]
     pub stake_pool: AccountInfo<'info>,
 
+    // Check derivation path.
     #[account(
-        mut
+        mut,
+        seeds = [
+            stake_pool.key().as_ref(),
+            "withdraw".as_bytes()
+        ],
+        bump,
+        seeds::program = stake_pool_program_id
     )]
     pub withdraw_authority: AccountInfo<'info>,
 
+    // CHECK: This is safe. We're not writing or reading from this account.
+    // Just need to initialize it and pass to the stake pool program.
     #[account(
         init,
         payer = user,
@@ -146,6 +176,11 @@ pub struct CreatePersonalLst<'info> {
     // Initialize stake reserve account. Transfer ownership to stake program.
     #[account(
         init,
+        seeds = [
+            &stake_pool.key().to_bytes(),
+            "stake_reserve".as_bytes()
+        ],
+        bump,
         payer = user,
         space = 200,
         owner = stake_program.key(),
@@ -169,25 +204,33 @@ pub struct CreatePersonalLst<'info> {
     )]
     pub personal_lst_mint: Account<'info, Mint>,
 
+    // Personal LST token account owned by the Stake Pool manager.
     #[account(
-        mut
+        mut,
+        token::mint = personal_lst_mint,
+        token::authority = ramp_user_account,
+        token::token_program = token_program,
     )]
-    pub manager_pool_account: AccountInfo<'info>,
+    pub manager_pool_account: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        seeds = [],
-        bump
+        seeds = [
+            "user_account".as_bytes(),
+            &user.key().to_bytes()
+        ],
+        bump,
+
+        // Make sure user does not have personal LST yet.
+        constraint = ramp_user_account.personal_lst.is_none(),
     )]
     pub ramp_user_account: Account<'info, RampAccount>,
 
     #[account(
-        mut
+        constraint = token_program.key() == Token::id()
     )]
     pub token_program: Program<'info, Token>,
 
-    #[account(
-        mut
-    )]
+    #[account()]
     pub system_program: Program<'info, System>,
 }

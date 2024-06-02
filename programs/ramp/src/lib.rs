@@ -19,13 +19,23 @@ pub mod ramp {
     // Since user automatically becomes a creator,
     // this has to accept all parameters like bonding curve, etc.
     // Initialize user's stake pool, upload metadata.
-    pub fn create_account(ctx: Context<Initialize>) -> Result<()> {
-        Ok(())
+    pub fn create_account(
+        ctx: Context<CreateAccount>,
+        display_name: String,
+        index: u64,
+        bonding_curve_mode: BondingCurveMode
+    ) -> Result<()> {
+        instructions::create_account(
+            ctx, 
+            display_name, 
+            index, 
+            bonding_curve_mode
+        )
     }
 
     // Initialize personal LST. Upload metadata, create Personal Stake Pool, etc.
     pub fn create_personal_lst(ctx: Context<CreatePersonalLst>) -> Result<()> {
-        Ok(())
+        instructions::create_personal_lst(ctx)
     }
 
     // Purchase Share
@@ -51,6 +61,3 @@ pub mod ramp {
         Ok(())
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
