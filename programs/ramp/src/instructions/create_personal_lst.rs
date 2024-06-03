@@ -24,6 +24,7 @@ pub fn create_personal_lst(
     let stake_pool_program = &mut ctx.accounts.stake_pool_program;
     let stake_pool = &mut ctx.accounts.stake_pool;
     let ramp_user_account = &mut ctx.accounts.ramp_user_account;
+    let personal_market = &mut ctx.accounts.personal_market;
     let validator_list = &mut ctx.accounts.validator_list;
     let stake_reserve = &mut ctx.accounts.stake_reserve;
     let personal_lst_mint = &mut ctx.accounts.personal_lst_mint;
@@ -108,6 +109,10 @@ pub fn create_personal_lst(
         &[signer_seeds]
     )?;
 
+    personal_market.market_currency = personal_lst_mint.key();
+    ramp_user_account.personal_lst = Some(personal_lst_mint.key());
+    ramp_user_account.personal_stake_pool = Some(stake_pool.key());
+
     Ok(())
 }
 
@@ -124,7 +129,6 @@ pub struct CreatePersonalLst<'info> {
         constraint = stake_pool_program.key() == stake_pool_program_id @ RampError::InvalidStakePoolProgram,
     )]
     pub stake_pool_program: AccountInfo<'info>,
-
 
     #[account(
         constraint = stake_program.key() == Stake::id() @ RampError::InvalidStakeProgram
@@ -225,6 +229,17 @@ pub struct CreatePersonalLst<'info> {
         constraint = ramp_user_account.personal_lst.is_none(),
     )]
     pub ramp_user_account: Account<'info, RampAccount>,
+
+    #[account(
+        mut,
+        seeds = [
+            "personal_market".as_bytes(),
+            &user.key().to_bytes()
+        ],
+        bump,
+        constraint = personal_market.id == ramp_user_account.id
+    )]
+    pub personal_market: Account<'info, PersonalMarket>,
 
     #[account(
         constraint = token_program.key() == Token::id()

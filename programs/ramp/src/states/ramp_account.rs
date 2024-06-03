@@ -7,5 +7,6 @@ pub struct RampAccount {
     pub display_name: String, // 8 + string len
     pub held_shares: Vec<Share>, // 4 + 72 * vec len
     pub personal_market: Pubkey, // 32
+    pub personal_stake_pool: Option<Pubkey>, // 1 + 32
     pub personal_lst: Option<Pubkey>, // 1 + 32
 }

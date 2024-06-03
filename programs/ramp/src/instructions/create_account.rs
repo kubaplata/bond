@@ -5,7 +5,7 @@ pub fn create_account(
     ctx: Context<CreateAccount>,
     display_name: String,
     index: u64,
-    bonding_curve_mode: BondingCurveMode
+    bonding_curve_mode: BondingCurveMode,
 ) -> Result<()> {
     let ramp_protocol = &mut ctx.accounts.ramp_protocol;
     let user_ramp_account = &mut ctx.accounts.user_ramp_account;
@@ -16,6 +16,7 @@ pub fn create_account(
     user_ramp_account.id = index;
     user_ramp_account.personal_lst = None;
     user_ramp_account.personal_market = personal_market.key();
+    user_ramp_account.personal_stake_pool = None;
 
     personal_market.id = index;
 
@@ -59,7 +60,7 @@ pub struct CreateAccount<'info> {
             "user_account".as_bytes(),
             &user.key().to_bytes()
         ],
-        space = 8 + 8 + 32 + (1 + 32) + 4 + 8 + display_name.len(),
+        space = 8 + 8 + (1 * 32) + (2 * (1 + 32)) + 4 + 8 + display_name.len(),
         bump
     )]
     pub user_ramp_account: Account<'info, RampAccount>,
@@ -69,7 +70,7 @@ pub struct CreateAccount<'info> {
         payer = user,
         seeds = [
             "personal_market".as_bytes(),
-            &index.to_le_bytes(),
+            &user.key().to_bytes()
         ],
         space = 8 + 0,
         bump,

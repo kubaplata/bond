@@ -27,5 +27,11 @@ pub enum RampError {
     InvalidShareSeller,
 
     #[msg("Seller does not have enough shares to sell.")]
-    InvalidShareBalance
+    InvalidShareBalance,
+
+    #[msg("Provided LST mint does not match Stake Pool mint.")]
+    PoolMintMismatch,
+
+    #[msg("Provided Stake Pool manager is invalid.")]
+    PoolManagerMismatch
 }
