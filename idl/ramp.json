@@ -1,0 +1,415 @@
+{
+  "version": "0.1.0",
+  "name": "ramp",
+  "instructions": [
+    {
+      "name": "createAccount",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "rampProtocol",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userRampAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "personalMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "displayName",
+          "type": "string"
+        },
+        {
+          "name": "index",
+          "type": "u64"
+        },
+        {
+          "name": "bondingCurveMode",
+          "type": {
+            "defined": "BondingCurveMode"
+          }
+        }
+      ]
+    },
+    {
+      "name": "createPersonalLst",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakePoolProgram",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakePool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "validatorList",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "personalLstMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerPoolAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rampUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "personalMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "purchaseShare",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "rampUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rampUserAccountLstVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellerUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "personalMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketCurrency",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakePool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeReserve",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "managerFeeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakePoolProgram",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "seller",
+          "type": "publicKey"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "PersonalMarket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "holders",
+            "type": {
+              "vec": {
+                "defined": "Share"
+              }
+            }
+          },
+          {
+            "name": "marketCurrency",
+            "type": "publicKey"
+          },
+          {
+            "name": "totalShares",
+            "type": "u64"
+          },
+          {
+            "name": "totalTrades",
+            "type": "u64"
+          },
+          {
+            "name": "totalVolume",
+            "type": "u64"
+          },
+          {
+            "name": "mode",
+            "type": {
+              "defined": "BondingCurveMode"
+            }
+          },
+          {
+            "name": "currentPurchasePrice",
+            "type": "u64"
+          },
+          {
+            "name": "currentSalePrice",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RampAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "displayName",
+            "type": "string"
+          },
+          {
+            "name": "heldShares",
+            "type": {
+              "vec": {
+                "defined": "Share"
+              }
+            }
+          },
+          {
+            "name": "personalMarket",
+            "type": "publicKey"
+          },
+          {
+            "name": "personalStakePool",
+            "type": {
+              "option": "publicKey"
+            }
+          },
+          {
+            "name": "personalLst",
+            "type": {
+              "option": "publicKey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RampProtocol",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "defaultCurrency",
+            "type": "publicKey"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "Share",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "publicKey"
+          },
+          {
+            "name": "market",
+            "type": "publicKey"
+          },
+          {
+            "name": "owned",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BondingCurveMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Linear"
+          },
+          {
+            "name": "Exponential"
+          },
+          {
+            "name": "RapidExponential"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "EmptyError",
+      "msg": ""
+    },
+    {
+      "code": 6001,
+      "name": "InvalidWithdrawAuthority",
+      "msg": "Invalid withdraw authority provided with the instruction."
+    },
+    {
+      "code": 6002,
+      "name": "InvalidStakePoolProgram",
+      "msg": "Invalid Stake Pool program ID."
+    },
+    {
+      "code": 6003,
+      "name": "InvalidStakeProgram",
+      "msg": "Invalid Stake program ID."
+    },
+    {
+      "code": 6004,
+      "name": "LstPreMinted",
+      "msg": "Personal LST cannot be pre-minted."
+    },
+    {
+      "code": 6005,
+      "name": "InvalidLstDecimals",
+      "msg": "LST decimals have to equal SOL decimals, 9."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidLstAuthority",
+      "msg": "Invalid LST authorities. Make sure the token cannot be frozen."
+    },
+    {
+      "code": 6007,
+      "name": "InvalidShareSeller",
+      "msg": "Seller does not own any shares."
+    },
+    {
+      "code": 6008,
+      "name": "InvalidShareBalance",
+      "msg": "Seller does not have enough shares to sell."
+    },
+    {
+      "code": 6009,
+      "name": "PoolMintMismatch",
+      "msg": "Provided LST mint does not match Stake Pool mint."
+    },
+    {
+      "code": 6010,
+      "name": "PoolManagerMismatch",
+      "msg": "Provided Stake Pool manager is invalid."
+    },
+    {
+      "code": 6011,
+      "name": "PoolReserveMismatch",
+      "msg": "Provided Stake Pool reserve is invalid."
+    }
+  ],
+  "metadata": {
+    "address": "EXSphcPS7fXSnmVPqo8Q5Hax5yRnc3t4MFWD1NozvMro",
+    "origin": "anchor",
+    "binaryVersion": "0.29.0",
+    "libVersion": "0.29.0"
+  }
+}

@@ -1,5 +1,11 @@
 use anchor_lang::prelude::*;
-use crate::states::Share;
+
+#[derive(Default, AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Share {
+    pub user: Pubkey, // User's address. 32
+    pub market: Pubkey, // Market's pubkey. 32
+    pub owned: u64, // Number of shares owned by this user. 8
+}
 
 #[account]
 pub struct RampAccount {

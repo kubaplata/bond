@@ -42,22 +42,25 @@ pub mod ramp {
     // Calculate price & fees depending on the bonding curve.
     // Execute sale.
     // Charge SOL & deposit into stake pool.
-    pub fn purchase_share(ctx: Context<PurchaseShare>) -> Result<()> {
-        Ok(())
+    pub fn purchase_share(
+        ctx: Context<PurchaseShare>,
+        seller: Pubkey
+    ) -> Result<()> {
+        instructions::purchase_share(ctx, seller)
     }
 
     // Dump Share
     // Calculate prices & charge fee.
     // Execute sale.
     // Unlock SOL from the stake pool using the LST held in the Ramp.
-    pub fn sell_share(ctx: Context<SellShare>) -> Result<()> {
-        Ok(())
-    }
+    // pub fn sell_share(ctx: Context<SellShare>) -> Result<()> {
+    //     Ok(())
+    // }
 
     // Change settings. Function used to manage all user's settings.
     // Change personal LST metadata.
     // Add/remove validator.
-    pub fn change_settings(ctx: Context<ChangeSettings>) -> Result<()> {
-        Ok(())
-    }
+    // pub fn change_settings(ctx: Context<ChangeSettings>) -> Result<()> {
+    //     Ok(())
+    // }
 }

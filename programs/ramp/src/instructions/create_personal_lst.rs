@@ -6,12 +6,18 @@ use spl_stake_pool::{
 };
 use crate::states::*;
 use anchor_spl::{
-    stake::Stake, 
+    stake::{
+        Stake,
+        StakeAccount
+    }, 
     token::{
         Mint, Token, TokenAccount
     }
 };
-use anchor_lang::solana_program::stake;
+use anchor_lang::solana_program::{
+    stake,
+    stake::state::StakeStateV2
+};
 use crate::errors::RampError;
 
 const MAX_VALIDATORS: u32 = 32;
@@ -101,7 +107,7 @@ pub fn create_personal_lst(
             stake_pool.to_owned(),
             ramp_user_account.to_account_info(),
             validator_list.to_owned(),
-            stake_reserve.to_owned(),
+            stake_reserve.to_account_info(),
             personal_lst_mint.to_account_info(),
             manager_pool_account.to_account_info(),
             token_program.to_account_info()
@@ -123,7 +129,7 @@ pub struct CreatePersonalLst<'info> {
     )]
     pub user: Signer<'info>,
 
-    // CHECK: This is safe. Checking program ID directly.
+    /// CHECK: This is safe. Checking program ID directly.
     #[account(
         mut,
         constraint = stake_pool_program.key() == stake_pool_program_id @ RampError::InvalidStakePoolProgram,
@@ -137,6 +143,7 @@ pub struct CreatePersonalLst<'info> {
     
     // Initialize stake pool with fixed derivation path, so that there cannot be more than one 
     // personal stake pool initialized via ramp per user.
+    /// CHECK: Not reading/writing from/to this account. Only using for CPI to stake pool program.
     #[account(
         init,
         payer = user,
@@ -151,6 +158,7 @@ pub struct CreatePersonalLst<'info> {
     pub stake_pool: AccountInfo<'info>,
 
     // Check derivation path.
+    /// CHECK: Fixed derivation path. Not reading or writing to this account.
     #[account(
         mut,
         seeds = [
@@ -162,8 +170,8 @@ pub struct CreatePersonalLst<'info> {
     )]
     pub withdraw_authority: AccountInfo<'info>,
 
-    // CHECK: This is safe. We're not writing or reading from this account.
     // Just need to initialize it and pass to the stake pool program.
+    /// CHECK: This is safe. We're not writing or reading from this account.
     #[account(
         init,
         payer = user,
@@ -189,7 +197,7 @@ pub struct CreatePersonalLst<'info> {
         space = 200,
         owner = stake_program.key(),
     )]
-    pub stake_reserve: AccountInfo<'info>,
+    pub stake_reserve: Account<'info, StakeAccount>,
 
     // TODO: Checks. Make sure token authorities are stake pools.
     #[account(

@@ -33,5 +33,8 @@ pub enum RampError {
     PoolMintMismatch,
 
     #[msg("Provided Stake Pool manager is invalid.")]
-    PoolManagerMismatch
+    PoolManagerMismatch,
+
+    #[msg("Provided Stake Pool reserve is invalid.")]
+    PoolReserveMismatch
 }

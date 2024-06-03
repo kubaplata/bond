@@ -9,11 +9,11 @@ use anchor_spl::token::TokenAccount;
 use spl_stake_pool::state::StakePool;
 use spl_stake_pool::{
     instruction::deposit_sol,
-    ID as stake_pool_program_id
+    ID as stake_pool_program_id,
 };
 use crate::{PersonalMarket, RampAccount};
 use crate::errors::RampError;
-use anchor_spl::stake::Stake;
+use anchor_spl::stake::{Stake, StakeAccount};
 use anchor_spl::token::{
     Token,
     Mint
@@ -37,6 +37,11 @@ pub fn purchase_share(
     let market_currency = &mut ctx.accounts.market_currency;
     let manager_fee_account = &mut ctx.accounts.manager_fee_account;
     let token_program = &mut ctx.accounts.token_program;
+
+    require!(
+        stake_reserve.key() == stake_pool.reserve_stake,
+        RampError::PoolReserveMismatch
+    );
 
     require!(
         stake_pool.pool_mint == market_currency.key(),
@@ -144,6 +149,7 @@ pub struct PurchaseShare<'info> {
     // This can be any existing personal market. No constraints/limitations/etc.
     #[account(
         mut,
+        constraint = seller_user_account.id == personal_market.id
     )]
     pub personal_market: Account<'info, PersonalMarket>,
 
@@ -153,6 +159,7 @@ pub struct PurchaseShare<'info> {
     )]
     pub market_currency: Account<'info, Mint>,
 
+    /// CHECK: StakePool is non-anchor type. Later we're checking if this deserializes into StakePool.
     #[account(
         mut,
         seeds = [
@@ -160,10 +167,12 @@ pub struct PurchaseShare<'info> {
             "personal_stake_pool".as_bytes(),
         ],
         bump,
-        owner = stake_pool_program_id
+        owner = stake_pool_program_id,
+        constraint = seller_user_account.personal_stake_pool.is_some() && stake_pool.key() == seller_user_account.personal_stake_pool.unwrap()
     )]
     pub stake_pool: AccountInfo<'info>,
 
+    /// CHECK: Not reading/writing. We're checking if this matches stake_pool's withdraw_authority.
     #[account(
         mut,
         seeds = [
@@ -175,6 +184,7 @@ pub struct PurchaseShare<'info> {
     )]
     pub withdraw_authority: AccountInfo<'info>,
 
+    /// CHECK: We're later checking if this matches Stake Pool's stake reserve.
     #[account(
         seeds = [
             &stake_pool.key().to_bytes(),
@@ -183,13 +193,19 @@ pub struct PurchaseShare<'info> {
         bump,
         owner = stake_program.key(),
     )]
-    pub stake_reserve: AccountInfo<'info>,
+    pub stake_reserve: Account<'info, StakeAccount>,
 
+    // Same as `manager_pool_account` in `create_personal_lst`.
+    // Pool manager's ATA for the LST.
     #[account(
-        mut
+        mut,
+        token::mint = market_currency,
+        token::authority = ramp_user_account,
+        token::token_program = token_program,
     )]
-    pub manager_fee_account: AccountInfo<'info>,
+    pub manager_fee_account: Account<'info, TokenAccount>,
 
+    /// CHECK: Directly checking program ID.
     #[account(
         mut,
         constraint = stake_pool_program.key() == stake_pool_program_id @ RampError::InvalidStakePoolProgram,

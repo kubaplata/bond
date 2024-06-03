@@ -1,12 +1,10 @@
-use std::borrow::Borrow;
-
 use anchor_lang::prelude::*;
 use crate::states::Share;
-use crate::borsh::{BorshSerialize, BorshDeserialize};
 use crate::RampError;
 
-#[derive(Clone, BorshSerialize, BorshDeserialize)]
+#[derive(AnchorSerialize, Eq, AnchorDeserialize, Clone, Debug, PartialEq, Default, Copy)]
 pub enum BondingCurveMode {
+    #[default]
     Linear,
     Exponential,
     RapidExponential
