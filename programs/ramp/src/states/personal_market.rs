@@ -12,15 +12,15 @@ pub enum BondingCurveMode {
 
 #[account]
 pub struct PersonalMarket {
-    pub id: u64,
-    pub holders: Vec<Share>,
-    pub market_currency: Pubkey,
-    pub total_shares: u64,
-    pub total_trades: u64,
-    pub total_volume: u64,
-    pub mode: BondingCurveMode,
-    pub current_purchase_price: u64,
-    pub current_sale_price: u64,
+    pub id: u64, // 8
+    pub holders: Vec<Share>, // 4 + 0
+    pub market_currency: Pubkey, // 32
+    pub total_shares: u64, // 8
+    pub total_trades: u64, // 8
+    pub total_volume: u64, // 8
+    pub mode: BondingCurveMode, // 1 + 1
+    pub current_purchase_price: u64, // 8
+    pub current_sale_price: u64, // 8
 }
 
 impl PersonalMarket {

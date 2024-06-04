@@ -19,7 +19,6 @@ import {
  */
 export type CreateAccountInstructionArgs = {
   displayName: string
-  index: beet.bignum
   bondingCurveMode: BondingCurveMode
 }
 /**
@@ -35,7 +34,6 @@ export const createAccountStruct = new beet.FixableBeetArgsStruct<
   [
     ['instructionDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)],
     ['displayName', beet.utf8String],
-    ['index', beet.u64],
     ['bondingCurveMode', bondingCurveModeBeet],
   ],
   'CreateAccountInstructionArgs'

@@ -282,6 +282,26 @@ createErrorFromNameLookup.set(
 )
 
 /**
+ * IndexMismatch: 'Account initialized with incorrect index.'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class IndexMismatchError extends Error {
+  readonly code: number = 0x177c
+  readonly name: string = 'IndexMismatch'
+  constructor() {
+    super('Account initialized with incorrect index.')
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, IndexMismatchError)
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x177c, () => new IndexMismatchError())
+createErrorFromNameLookup.set('IndexMismatch', () => new IndexMismatchError())
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

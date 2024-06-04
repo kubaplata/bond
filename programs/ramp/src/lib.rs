@@ -15,6 +15,13 @@ declare_id!("EXSphcPS7fXSnmVPqo8Q5Hax5yRnc3t4MFWD1NozvMro");
 pub mod ramp {
     use super::*;
 
+    pub fn initialize_ramp(
+        ctx: Context<InitializeRamp>,
+        default_currency: Pubkey
+    ) -> Result<()> {
+        instructions::initialize_ramp(ctx, default_currency)
+    }
+
     // Create Account
     // Since user automatically becomes a creator,
     // this has to accept all parameters like bonding curve, etc.
@@ -22,13 +29,11 @@ pub mod ramp {
     pub fn create_account(
         ctx: Context<CreateAccount>,
         display_name: String,
-        index: u64,
         bonding_curve_mode: BondingCurveMode
     ) -> Result<()> {
         instructions::create_account(
             ctx, 
-            display_name, 
-            index, 
+            display_name,
             bonding_curve_mode
         )
     }

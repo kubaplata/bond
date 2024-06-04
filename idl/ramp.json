@@ -37,10 +37,6 @@
           "type": "string"
         },
         {
-          "name": "index",
-          "type": "u64"
-        },
-        {
           "name": "bondingCurveMode",
           "type": {
             "defined": "BondingCurveMode"
@@ -298,7 +294,15 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "index",
+            "type": "u64"
+          },
+          {
             "name": "defaultCurrency",
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
             "type": "publicKey"
           }
         ]
@@ -404,6 +408,11 @@
       "code": 6011,
       "name": "PoolReserveMismatch",
       "msg": "Provided Stake Pool reserve is invalid."
+    },
+    {
+      "code": 6012,
+      "name": "IndexMismatch",
+      "msg": "Account initialized with incorrect index."
     }
   ],
   "metadata": {

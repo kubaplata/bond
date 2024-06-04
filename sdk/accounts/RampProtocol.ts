@@ -5,9 +5,9 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
+import * as beet from '@metaplex-foundation/beet'
 import * as web3 from '@solana/web3.js'
 import * as beetSolana from '@metaplex-foundation/beet-solana'
-import * as beet from '@metaplex-foundation/beet'
 
 /**
  * Arguments used to create {@link RampProtocol}
@@ -15,7 +15,9 @@ import * as beet from '@metaplex-foundation/beet'
  * @category generated
  */
 export type RampProtocolArgs = {
+  index: beet.bignum
   defaultCurrency: web3.PublicKey
+  admin: web3.PublicKey
 }
 
 export const rampProtocolDiscriminator = [62, 209, 225, 250, 195, 199, 241, 221]
@@ -27,13 +29,17 @@ export const rampProtocolDiscriminator = [62, 209, 225, 250, 195, 199, 241, 221]
  * @category generated
  */
 export class RampProtocol implements RampProtocolArgs {
-  private constructor(readonly defaultCurrency: web3.PublicKey) {}
+  private constructor(
+    readonly index: beet.bignum,
+    readonly defaultCurrency: web3.PublicKey,
+    readonly admin: web3.PublicKey
+  ) {}
 
   /**
    * Creates a {@link RampProtocol} instance from the provided args.
    */
   static fromArgs(args: RampProtocolArgs) {
-    return new RampProtocol(args.defaultCurrency)
+    return new RampProtocol(args.index, args.defaultCurrency, args.admin)
   }
 
   /**
@@ -139,7 +145,19 @@ export class RampProtocol implements RampProtocolArgs {
    */
   pretty() {
     return {
+      index: (() => {
+        const x = <{ toNumber: () => number }>this.index
+        if (typeof x.toNumber === 'function') {
+          try {
+            return x.toNumber()
+          } catch (_) {
+            return x
+          }
+        }
+        return x
+      })(),
       defaultCurrency: this.defaultCurrency.toBase58(),
+      admin: this.admin.toBase58(),
     }
   }
 }
@@ -156,7 +174,9 @@ export const rampProtocolBeet = new beet.BeetStruct<
 >(
   [
     ['accountDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)],
+    ['index', beet.u64],
     ['defaultCurrency', beetSolana.publicKey],
+    ['admin', beetSolana.publicKey],
   ],
   RampProtocol.fromArgs,
   'RampProtocol'

@@ -36,5 +36,8 @@ pub enum RampError {
     PoolManagerMismatch,
 
     #[msg("Provided Stake Pool reserve is invalid.")]
-    PoolReserveMismatch
+    PoolReserveMismatch,
+
+    #[msg("Account initialized with incorrect index.")]
+    IndexMismatch
 }

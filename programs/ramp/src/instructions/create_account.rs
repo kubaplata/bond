@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 use crate::states::*;
+use crate::errors::RampError;
 
 pub fn create_account(
     ctx: Context<CreateAccount>,
     display_name: String,
-    index: u64,
     bonding_curve_mode: BondingCurveMode,
 ) -> Result<()> {
     let ramp_protocol = &mut ctx.accounts.ramp_protocol;
@@ -13,12 +13,12 @@ pub fn create_account(
 
     user_ramp_account.display_name = display_name;
     user_ramp_account.held_shares = vec![];
-    user_ramp_account.id = index;
+    user_ramp_account.id = ramp_protocol.index;
     user_ramp_account.personal_lst = None;
     user_ramp_account.personal_market = personal_market.key();
     user_ramp_account.personal_stake_pool = None;
 
-    personal_market.id = index;
+    personal_market.id = ramp_protocol.index;
 
     // Market properties.
     personal_market.mode = bonding_curve_mode;
@@ -40,7 +40,6 @@ pub fn create_account(
 #[derive(Accounts)]
 #[instruction(
     display_name: String,
-    index: u64,
 )]
 pub struct CreateAccount<'info> {
     #[account(
@@ -72,7 +71,7 @@ pub struct CreateAccount<'info> {
             "personal_market".as_bytes(),
             &user.key().to_bytes()
         ],
-        space = 8 + 0,
+        space = 8 + (6 * 8) + 32 + 2 + 4,
         bump,
     )]
     pub personal_market: Account<'info, PersonalMarket>,

@@ -4,8 +4,11 @@
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.30.0",
-    "@metaplex-foundation/solita": "^0.20.1"
+    "@coral-xyz/anchor": "^0.29.0",
+    "@metaplex-foundation/beet": "^0.7.2",
+    "@metaplex-foundation/solita": "^0.20.1",
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.91.9"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
