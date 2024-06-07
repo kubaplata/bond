@@ -10,6 +10,14 @@ ramp = "EXSphcPS7fXSnmVPqo8Q5Hax5yRnc3t4MFWD1NozvMro"
 [registry]
 url = "https://api.apr.dev"
 
+[[test.genesis]]
+address = "SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy"
+program = "./programs_local/spl_stake_pool.so"
+
+[[test.genesis]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+program = "./programs_local/metaplex_token_metadata_program.so"
+
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"

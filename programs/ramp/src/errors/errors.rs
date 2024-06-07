@@ -39,5 +39,11 @@ pub enum RampError {
     PoolReserveMismatch,
 
     #[msg("Account initialized with incorrect index.")]
-    IndexMismatch
+    IndexMismatch,
+
+    #[msg("Invalid remaining_accounts schema.")]
+    InvalidRemainingAccountsSchema,
+
+    #[msg("Invalid personal LST metadata account address.")]
+    InvalidMetadataAddress
 }

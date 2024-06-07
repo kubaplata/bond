@@ -39,8 +39,18 @@ pub mod ramp {
     }
 
     // Initialize personal LST. Upload metadata, create Personal Stake Pool, etc.
-    pub fn create_personal_lst(ctx: Context<CreatePersonalLst>) -> Result<()> {
-        instructions::create_personal_lst(ctx)
+    pub fn create_personal_lst(
+        ctx: Context<CreatePersonalLst>,
+        lst_name: String,
+        lst_symbol: String,
+        lst_metadata: String,
+    ) -> Result<()> {
+        instructions::create_personal_lst(
+            ctx,
+            lst_name,
+            lst_symbol,
+            lst_metadata
+        )
     }
 
     // Purchase Share
