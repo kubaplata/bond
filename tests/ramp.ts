@@ -19,6 +19,15 @@ import {
     TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 import {Metaplex} from "@metaplex-foundation/js";
+import {
+    AccountType,
+    getStakePoolAccount,
+    // @ts-ignore
+    getValidatorListAccount,
+    stakePoolInfo
+} from "@solana/spl-stake-pool";
+
+console.log({getValidatorListAccount});
 
 async function createToken(
     connection: Connection,
@@ -372,6 +381,14 @@ describe("ramp", () => {
             newAccountPubkey: validatorList.publicKey
         });
 
+        const [depositAuthority] = PublicKey.findProgramAddressSync(
+            [
+                stakePool.toBuffer(),
+                Buffer.from("deposit"),
+            ],
+            stakePoolProgram,
+        )
+
         const personalLstMetadata = metaplex
             .nfts()
             .pdas()
@@ -423,7 +440,11 @@ describe("ramp", () => {
         tx.sign(stakeReserve, validatorList);
 
         const signed = await provider.wallet.signTransaction(tx);
-        const txId = await provider.connection.sendRawTransaction(signed.serialize(), { skipPreflight: true });
+
+        const {
+            epoch
+        } = await provider.connection.getEpochInfo();
+        const txId = await provider.connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
 
         await provider.connection.confirmTransaction({
             blockhash,
@@ -432,11 +453,93 @@ describe("ramp", () => {
         }, "confirmed");
 
         const {
-            meta: {
-                logMessages
+            account: {
+                data: {
+                    validatorList: stakePoolValidatorList,
+                    poolMint,
+                    manager,
+                    managerFeeAccount,
+                    solReferralFee,
+                    epochFee,
+                    nextSolWithdrawalFee,
+                    nextStakeWithdrawalFee,
+                    accountType,
+                    lastEpochPoolTokenSupply,
+                    totalLamports,
+                    lastEpochTotalLamports,
+                    lockup,
+                    lastUpdateEpoch,
+                    preferredDepositValidatorVoteAddress,
+                    preferredWithdrawValidatorVoteAddress,
+                    reserveStake,
+                    solDepositAuthority,
+                    nextEpochFee,
+                    solDepositFee,
+                    solWithdrawalFee,
+                    solWithdrawAuthority,
+                    stakeDepositAuthority,
+                    staker,
+                    stakeDepositFee,
+                    stakeReferralFee,
+                    stakeWithdrawBumpSeed,
+                    stakeWithdrawalFee: stakePoolWithdrawalFee,
+                    tokenProgramId,
+                    poolTokenSupply
+                }
             }
-        } = await provider.connection.getParsedTransaction(txId, "confirmed");
+        } = await getStakePoolAccount(
+            provider.connection,
+            stakePool
+        );
 
-        console.log(logMessages);
+        expect(stakePoolValidatorList.toString()).eq(validatorList.publicKey.toString());
+        expect(poolMint.toString()).eq(personalLstMint.toString());
+        expect(manager.toString()).eq(rampUserAccount.toString());
+        expect(managerFeeAccount.toString()).eq(managerPoolAccount.toString());
+        expect(solReferralFee.toString()).eq("0");
+        expect(epochFee.numerator.toString()).eq("0");
+        expect(epochFee.denominator.toString()).eq("0");
+        expect(!!nextSolWithdrawalFee).eq(false);
+        expect(!!nextSolWithdrawalFee).eq(false);
+        expect(!!nextStakeWithdrawalFee).eq(false);
+        expect(!!nextStakeWithdrawalFee).eq(false);
+        expect(accountType).eq(1) // AccountType.StakePool
+        expect(lastEpochPoolTokenSupply.toString()).eq("0");
+        expect(totalLamports.toString()).eq("0");
+        expect(lastEpochTotalLamports.toString()).eq("0");
+        expect(lockup.epoch.toString()).eq("0");
+        expect(lockup.unixTimestamp.toString()).eq("0");
+        expect(lockup.custodian.toString()).eq(new PublicKey(0).toString());
+        expect(lastUpdateEpoch.toString()).eq(`${epoch}`);
+        expect(!!preferredDepositValidatorVoteAddress).eq(false); // whether null or undefined, just empty field
+        expect(!!preferredWithdrawValidatorVoteAddress).eq(false); // whether null or undefined, just empty field
+        expect(reserveStake.toString()).eq(stakeReserve.publicKey.toString());
+        expect(!!solDepositAuthority).eq(false);
+        expect(!!nextEpochFee).eq(false);
+        expect(solDepositFee.numerator.toString()).eq("0");
+        expect(solDepositFee.denominator.toString()).eq("0");
+        expect(solWithdrawalFee.numerator.toString()).eq("0");
+        expect(solWithdrawalFee.denominator.toString()).eq("0");
+        expect(!!solWithdrawAuthority).eq(false);
+        expect(stakeDepositAuthority.toString()).eq(depositAuthority.toString());
+        expect(staker.toString()).eq(rampUserAccount.toString());
+        expect(stakeDepositFee.numerator.toString()).eq("0");
+        expect(stakeDepositFee.denominator.toString()).eq("0");
+        expect(!!stakeReferralFee).eq(false); // whether 0 or undefined
+        expect(stakePoolWithdrawalFee.denominator.toString()).eq("0");
+        expect(stakePoolWithdrawalFee.numerator.toString()).eq("0");
+        expect(tokenProgramId.toString()).eq(TOKEN_PROGRAM_ID.toString());
+        expect(poolTokenSupply.toString()).eq("0");
+
+        const {
+            validatorList: stakePoolValidators,
+            maxValidators,
+        } = await stakePoolInfo(
+            provider.connection,
+            stakePool
+        );
+
+        expect(stakePoolValidators.length).eq(0);
+        expect(maxValidators).eq(8);
     });
 });

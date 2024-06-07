@@ -1,6 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::program::{invoke, invoke_signed}};
 use spl_stake_pool::{
     find_withdraw_authority_program_address, 
+    find_deposit_authority_program_address,
     inline_mpl_token_metadata::pda::find_metadata_account,
     instruction::{
         initialize,

@@ -8,8 +8,11 @@
     "@metaplex-foundation/beet": "^0.7.2",
     "@metaplex-foundation/js": "^0.20.1",
     "@metaplex-foundation/solita": "^0.20.1",
+    "@solana/spl-stake-pool": "^1.1.5",
     "@solana/spl-token": "^0.4.6",
-    "@solana/web3.js": "^1.91.9"
+    "@solana/web3.js": "^1.91.9",
+    "buffer-layout": "^1.2.2",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
