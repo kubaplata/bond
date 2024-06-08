@@ -24,6 +24,7 @@ pub fn create_account(
     personal_market.mode = bonding_curve_mode;
     personal_market.holders = vec![];
     personal_market.market_currency = ramp_protocol.default_currency;
+    personal_market.market_stake_pool = ramp_protocol.default_stake_pool;
 
     // Prices.
     personal_market.current_purchase_price = 0;
@@ -71,7 +72,7 @@ pub struct CreateAccount<'info> {
             "personal_market".as_bytes(),
             &user.key().to_bytes()
         ],
-        space = 8 + (6 * 8) + 32 + 2 + 4,
+        space = 8 + (6 * 8) + (2 * 32) + 2 + 4,
         bump,
     )]
     pub personal_market: Account<'info, PersonalMarket>,

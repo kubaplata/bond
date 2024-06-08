@@ -162,13 +162,8 @@ pub struct PurchaseShare<'info> {
     /// CHECK: StakePool is non-anchor type. Later we're checking if this deserializes into StakePool.
     #[account(
         mut,
-        seeds = [
-            &user.key().to_bytes(),
-            "personal_stake_pool".as_bytes(),
-        ],
-        bump,
         owner = stake_pool_program_id,
-        constraint = seller_user_account.personal_stake_pool.is_some() && stake_pool.key() == seller_user_account.personal_stake_pool.unwrap()
+        constraint = personal_market.market_stake_pool == seller_user_account.personal_stake_pool.unwrap()
     )]
     pub stake_pool: AccountInfo<'info>,
 

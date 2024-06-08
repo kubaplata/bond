@@ -16,10 +16,9 @@ pub mod ramp {
     use super::*;
 
     pub fn initialize_ramp(
-        ctx: Context<InitializeRamp>,
-        default_currency: Pubkey
+        ctx: Context<InitializeRamp>
     ) -> Result<()> {
-        instructions::initialize_ramp(ctx, default_currency)
+        instructions::initialize_ramp(ctx)
     }
 
     // Create Account

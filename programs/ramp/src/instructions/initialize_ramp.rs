@@ -1,16 +1,29 @@
 use anchor_lang::prelude::*;
-use crate::states::RampProtocol;
+use anchor_spl::token::Mint;
+use crate::states::{
+    RampProtocol,
+    StakePool
+};
+use crate::errors::RampError;
 
 pub fn initialize_ramp(
-    ctx: Context<InitializeRamp>,
-    default_currency: Pubkey
+    ctx: Context<InitializeRamp>
 ) -> Result<()> {
     let admin = &mut ctx.accounts.admin;
     let ramp = &mut ctx.accounts.ramp;
+    let default_lst = &mut ctx.accounts.default_lst;
+    let default_stake_pool = &mut ctx.accounts.default_stake_pool;
 
     ramp.admin = admin.key();
-    ramp.default_currency = default_currency;
     ramp.index = 0;
+
+    require!(
+        default_stake_pool.pool_mint == default_lst.key(),
+        RampError::StakePoolMintMismatch
+    );
+
+    ramp.default_currency = default_lst.key();
+    ramp.default_stake_pool = default_stake_pool.key();
 
     Ok(())
 }
@@ -29,9 +42,19 @@ pub struct InitializeRamp<'info> {
             "ramp".as_bytes()
         ],
         bump,
-        space = 8 + 8 + (2 * 32)
+        space = 8 + 8 + (3 * 32)
     )]
     pub ramp: Account<'info, RampProtocol>,
+
+    #[account(
+        mut
+    )]
+    pub default_stake_pool: Account<'info, StakePool>,
+
+    #[account(
+        mut
+    )]
+    pub default_lst: Account<'info, Mint>,
 
     pub system_program: Program<'info, System>,
 }

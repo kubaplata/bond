@@ -3,19 +3,24 @@ import {AnchorProvider, Program} from "@coral-xyz/anchor";
 import { Ramp } from "../target/types/ramp";
 import {
     Connection,
-    Keypair,
+    Keypair, LAMPORTS_PER_SOL,
     PublicKey,
     StakeProgram,
     SystemProgram,
     SYSVAR_RENT_PUBKEY,
     Transaction
 } from "@solana/web3.js";
-import {BondingCurveMode, RampProtocol} from "../sdk";
+import {BondingCurveMode, PersonalMarket, RampAccount, RampProtocol} from "../sdk";
 import {expect} from "chai";
 import {
     AuthorityType,
-    createAssociatedTokenAccountIdempotentInstruction, createInitializeMintInstruction,
-    createMintToInstruction, createSetAuthorityInstruction, getAssociatedTokenAddressSync, MINT_SIZE,
+    createAssociatedTokenAccountIdempotentInstruction,
+    createAssociatedTokenAccountInstruction,
+    createInitializeMintInstruction,
+    createMintToInstruction,
+    createSetAuthorityInstruction,
+    getAssociatedTokenAddressSync,
+    MINT_SIZE,
     TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 import {Metaplex} from "@metaplex-foundation/js";
@@ -24,7 +29,7 @@ import {
     getStakePoolAccount,
     // @ts-ignore
     getValidatorListAccount,
-    stakePoolInfo
+    stakePoolInfo,
 } from "@solana/spl-stake-pool";
 
 console.log({getValidatorListAccount});
@@ -221,13 +226,13 @@ describe("ramp", () => {
 
         await program
             .methods
-            .initializeRamp(
-                defaultLst
-            )
+            .initializeRamp()
             .accounts({
                 ramp: rampProtocol,
                 systemProgram: SystemProgram.programId,
-                admin: provider.publicKey
+                admin: provider.publicKey,
+                defaultLst,
+                defaultStakePool
             })
             .rpc();
 
@@ -541,5 +546,177 @@ describe("ramp", () => {
 
         expect(stakePoolValidators.length).eq(0);
         expect(maxValidators).eq(8);
+
+        const {
+            marketCurrency
+        } = await PersonalMarket.fromAccountAddress(
+            provider.connection,
+            personalMarket
+        );
+
+        expect(marketCurrency.toString()).eq(personalLstMint.toString());
+
+        const {
+            personalLst,
+            personalStakePool
+        } = await RampAccount.fromAccountAddress(
+            provider.connection,
+            rampUserAccount
+        );
+
+        expect(personalLst?.toString()).eq(personalLstMint.toString());
+        expect(personalStakePool?.toString()).eq(stakePool.toString());
+    });
+
+    it("Purchases a share.", async () => {
+        const [personalMarket] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("personal_market"),
+                provider.wallet.publicKey.toBuffer()
+            ],
+            program.programId
+        );
+
+        const [creatorRampAccount] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("user_account"),
+                provider.wallet.publicKey.toBuffer()
+            ],
+            program.programId
+        );
+
+        const bob = Keypair.generate();
+        const airdropTx = await provider.connection.requestAirdrop(bob.publicKey, 500 * LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(airdropTx);
+
+        const [buyerRampAccount] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("user_account"),
+                bob.publicKey.toBuffer()
+            ],
+            program.programId
+        );
+
+        const [buyerPersonalMarket] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("personal_market"),
+                bob.publicKey.toBuffer()
+            ],
+            program.programId
+        );
+
+        const createAccountIx = await program
+            .methods
+            .createAccount(
+                "bob",
+                { linear: {} }
+            )
+            .accounts({
+                user: bob.publicKey,
+                personalMarket: buyerPersonalMarket,
+                rampProtocol,
+                systemProgram: SystemProgram.programId,
+                userRampAccount: buyerRampAccount
+            })
+            .instruction();
+
+        const {
+            personalStakePool
+        } = await RampAccount.fromAccountAddress(
+            provider.connection,
+            creatorRampAccount
+        );
+
+        const {
+            marketCurrency,
+        } = await PersonalMarket.fromAccountAddress(
+            provider.connection,
+            personalMarket
+        );
+
+        const stakePoolData = await stakePoolInfo(
+            provider.connection,
+            // @ts-ignore
+            personalStakePool
+        );
+
+        const {
+            validatorListStorageAccount,
+            reserveStake,
+            managerFeeAccount,
+            poolWithdrawAuthority
+        } = stakePoolData;
+
+        const rampUserAccountLstVault = getAssociatedTokenAddressSync(
+            marketCurrency,
+            buyerRampAccount,
+            true
+        );
+
+        const ataIx = createAssociatedTokenAccountInstruction(
+            bob.publicKey,
+            rampUserAccountLstVault,
+            buyerRampAccount,
+            marketCurrency
+        );
+
+        const buyShareIx = await program
+            .methods
+            .purchaseShare(
+                provider.publicKey
+            )
+            .accounts({
+                user: bob.publicKey,
+                personalMarket,
+                rampUserAccount: buyerRampAccount,
+                stakePoolProgram: stakePoolProgram,
+                systemProgram: SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                stakeProgram: StakeProgram.programId,
+                marketCurrency,
+                // @ts-ignore // We are sure that personal stake pool exists
+                stakePool: personalStakePool,
+                stakeReserve: new PublicKey(reserveStake),
+                managerFeeAccount: new PublicKey(managerFeeAccount),
+                withdrawAuthority: new PublicKey(poolWithdrawAuthority),
+                sellerUserAccount: creatorRampAccount,
+                rampUserAccountLstVault
+            })
+            .instruction();
+
+        const tx = new Transaction();
+        tx.add(createAccountIx);
+        tx.add(ataIx);
+        tx.add(buyShareIx);
+
+        const {
+            lastValidBlockHeight,
+            blockhash
+        } = await provider.connection.getLatestBlockhash();
+
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = bob.publicKey;
+
+        tx.sign(bob);
+
+        const txId = await provider.connection.sendRawTransaction(tx.serialize(), { skipPreflight: true });
+        await provider.connection.confirmTransaction({
+            blockhash,
+            lastValidBlockHeight,
+            signature: txId
+        }, "confirmed");
+
+        const parsedTx = await provider.connection.getParsedTransaction(txId, "confirmed");
+        expect(parsedTx).to.not.eq(null);
+        expect(parsedTx?.meta).to.not.eq(null);
+        if (!parsedTx || !parsedTx.meta) return;
+
+        const {
+            meta: {
+                logMessages
+            }
+        } = parsedTx;
+
+        console.log(logMessages);
     });
 });

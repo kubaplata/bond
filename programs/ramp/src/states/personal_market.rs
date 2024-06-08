@@ -15,6 +15,7 @@ pub struct PersonalMarket {
     pub id: u64, // 8
     pub holders: Vec<Share>, // 4 + 0
     pub market_currency: Pubkey, // 32
+    pub market_stake_pool: Pubkey, // 32
     pub total_shares: u64, // 8
     pub total_trades: u64, // 8
     pub total_volume: u64, // 8

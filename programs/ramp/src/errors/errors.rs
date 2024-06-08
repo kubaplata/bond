@@ -45,5 +45,8 @@ pub enum RampError {
     InvalidRemainingAccountsSchema,
 
     #[msg("Invalid personal LST metadata account address.")]
-    InvalidMetadataAddress
+    InvalidMetadataAddress,
+
+    #[msg("Provided LST mint does not match Stake Pool data.")]
+    StakePoolMintMismatch
 }
