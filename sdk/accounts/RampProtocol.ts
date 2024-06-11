@@ -16,6 +16,7 @@ import * as beetSolana from '@metaplex-foundation/beet-solana'
  */
 export type RampProtocolArgs = {
   index: beet.bignum
+  defaultStakePool: web3.PublicKey
   defaultCurrency: web3.PublicKey
   admin: web3.PublicKey
 }
@@ -31,6 +32,7 @@ export const rampProtocolDiscriminator = [62, 209, 225, 250, 195, 199, 241, 221]
 export class RampProtocol implements RampProtocolArgs {
   private constructor(
     readonly index: beet.bignum,
+    readonly defaultStakePool: web3.PublicKey,
     readonly defaultCurrency: web3.PublicKey,
     readonly admin: web3.PublicKey
   ) {}
@@ -39,7 +41,12 @@ export class RampProtocol implements RampProtocolArgs {
    * Creates a {@link RampProtocol} instance from the provided args.
    */
   static fromArgs(args: RampProtocolArgs) {
-    return new RampProtocol(args.index, args.defaultCurrency, args.admin)
+    return new RampProtocol(
+      args.index,
+      args.defaultStakePool,
+      args.defaultCurrency,
+      args.admin
+    )
   }
 
   /**
@@ -156,6 +163,7 @@ export class RampProtocol implements RampProtocolArgs {
         }
         return x
       })(),
+      defaultStakePool: this.defaultStakePool.toBase58(),
       defaultCurrency: this.defaultCurrency.toBase58(),
       admin: this.admin.toBase58(),
     }
@@ -175,6 +183,7 @@ export const rampProtocolBeet = new beet.BeetStruct<
   [
     ['accountDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)],
     ['index', beet.u64],
+    ['defaultStakePool', beetSolana.publicKey],
     ['defaultCurrency', beetSolana.publicKey],
     ['admin', beetSolana.publicKey],
   ],

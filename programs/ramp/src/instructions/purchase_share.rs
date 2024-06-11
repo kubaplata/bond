@@ -18,6 +18,7 @@ use anchor_spl::token::{
     Token,
     Mint
 };
+use crate::states;
 
 pub fn purchase_share(
     ctx: Context<PurchaseShare>,
@@ -26,17 +27,14 @@ pub fn purchase_share(
     let user = &mut ctx.accounts.user;
     let ramp_user_account = &mut ctx.accounts.ramp_user_account;
     let personal_market = &mut ctx.accounts.personal_market;
-
-    let stake_pool_account = &mut ctx.accounts.stake_pool;
-    let stake_pool_data = stake_pool_account.try_borrow_mut_data()?;
-    let stake_pool = StakePool::deserialize(&mut stake_pool_data.as_ref())?;
-
+    let stake_pool = &mut ctx.accounts.stake_pool;
     let withdraw_authority = &mut ctx.accounts.withdraw_authority;
     let stake_reserve = &mut ctx.accounts.stake_reserve;
     let ramp_user_account_lst_vault = &mut ctx.accounts.ramp_user_account_lst_vault;
     let market_currency = &mut ctx.accounts.market_currency;
     let manager_fee_account = &mut ctx.accounts.manager_fee_account;
     let token_program = &mut ctx.accounts.token_program;
+    let ramp_user_account_vault = &mut ctx.accounts.ramp_user_account_vault;
 
     require!(
         stake_reserve.key() == stake_pool.reserve_stake,
@@ -64,7 +62,7 @@ pub fn purchase_share(
             system_program.to_account_info(), 
             Transfer {
                 from: user.to_account_info(),
-                to: ramp_user_account.to_account_info()
+                to: ramp_user_account_vault.to_account_info()
             }
         ),
         price
@@ -72,10 +70,10 @@ pub fn purchase_share(
 
     let deposit_sol_ix = deposit_sol(
         &stake_pool_program.key(), 
-        &stake_pool_account.key(), 
+        &stake_pool.key(), 
         &withdraw_authority.key(), 
         &stake_reserve.key(), 
-        &ramp_user_account.key(),
+        &ramp_user_account_vault.key(),
         &ramp_user_account_lst_vault.key(), 
         &manager_fee_account.key(), 
         &ramp_user_account_lst_vault.key(), 
@@ -85,16 +83,16 @@ pub fn purchase_share(
     );
 
     let signer_seeds = &[
-        "user_account".as_bytes(),
-        &user.key().to_bytes(),
-        &[ctx.bumps.ramp_user_account]
+        "vault".as_bytes(),
+        &ramp_user_account.key().to_bytes(),
+        &[ctx.bumps.ramp_user_account_vault]
     ];
 
     invoke_signed(
         &deposit_sol_ix, 
         &[
             stake_pool_program.to_account_info(),
-            stake_pool_account.to_account_info(),
+            stake_pool.to_account_info(),
             withdraw_authority.to_account_info(),
             stake_reserve.to_account_info(),
             ramp_user_account.to_account_info(),
@@ -102,6 +100,7 @@ pub fn purchase_share(
             manager_fee_account.to_account_info(),
             market_currency.to_account_info(),
             token_program.to_account_info(),
+            ramp_user_account_vault.to_account_info(),
         ], 
         &[signer_seeds]
     )?;
@@ -127,14 +126,24 @@ pub struct PurchaseShare<'info> {
         ],
         bump,
     )]
-    pub ramp_user_account: Account<'info, RampAccount>,
+    pub ramp_user_account: Box<Account<'info, RampAccount>>,
 
     #[account(
         mut,
         constraint = ramp_user_account_lst_vault.owner == ramp_user_account.key(),
         constraint = ramp_user_account_lst_vault.mint == market_currency.key()
     )]
-    pub ramp_user_account_lst_vault: Account<'info, TokenAccount>,
+    pub ramp_user_account_lst_vault: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        seeds = [
+            "vault".as_bytes(),
+            &ramp_user_account.key().to_bytes()
+        ],
+        bump
+    )]
+    pub ramp_user_account_vault: SystemAccount<'info>,
 
     #[account(
         mut,
@@ -144,28 +153,28 @@ pub struct PurchaseShare<'info> {
         ],
         bump,
     )]
-    pub seller_user_account: Account<'info, RampAccount>,
+    pub seller_user_account: Box<Account<'info, RampAccount>>,
 
     // This can be any existing personal market. No constraints/limitations/etc.
     #[account(
         mut,
         constraint = seller_user_account.id == personal_market.id
     )]
-    pub personal_market: Account<'info, PersonalMarket>,
+    pub personal_market: Box<Account<'info, PersonalMarket>>,
 
     #[account(
         mut,
         constraint = personal_market.market_currency == market_currency.key()
     )]
-    pub market_currency: Account<'info, Mint>,
+    pub market_currency: Box<Account<'info, Mint>>,
 
     /// CHECK: StakePool is non-anchor type. Later we're checking if this deserializes into StakePool.
     #[account(
         mut,
         owner = stake_pool_program_id,
-        constraint = personal_market.market_stake_pool == seller_user_account.personal_stake_pool.unwrap()
+        constraint = personal_market.market_stake_pool == stake_pool.key()
     )]
-    pub stake_pool: AccountInfo<'info>,
+    pub stake_pool: Account<'info, states::StakePool>,
 
     /// CHECK: Not reading/writing. We're checking if this matches stake_pool's withdraw_authority.
     #[account(
@@ -181,12 +190,9 @@ pub struct PurchaseShare<'info> {
 
     /// CHECK: We're later checking if this matches Stake Pool's stake reserve.
     #[account(
-        seeds = [
-            &stake_pool.key().to_bytes(),
-            "stake_reserve".as_bytes()
-        ],
-        bump,
+        mut,
         owner = stake_program.key(),
+        constraint = stake_reserve.key() == stake_pool.reserve_stake
     )]
     pub stake_reserve: Account<'info, StakeAccount>,
 
@@ -194,11 +200,9 @@ pub struct PurchaseShare<'info> {
     // Pool manager's ATA for the LST.
     #[account(
         mut,
-        token::mint = market_currency,
-        token::authority = ramp_user_account,
-        token::token_program = token_program,
+        constraint = manager_fee_account.key() == stake_pool.manager_fee_account
     )]
-    pub manager_fee_account: Account<'info, TokenAccount>,
+    pub manager_fee_account: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: Directly checking program ID.
     #[account(

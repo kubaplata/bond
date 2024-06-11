@@ -40,12 +40,13 @@ export const purchaseShareStruct = new beet.BeetArgsStruct<
  * @property [_writable_, **signer**] user
  * @property [_writable_] rampUserAccount
  * @property [_writable_] rampUserAccountLstVault
+ * @property [_writable_] rampUserAccountVault
  * @property [_writable_] sellerUserAccount
  * @property [_writable_] personalMarket
  * @property [_writable_] marketCurrency
  * @property [_writable_] stakePool
  * @property [_writable_] withdrawAuthority
- * @property [] stakeReserve
+ * @property [_writable_] stakeReserve
  * @property [_writable_] managerFeeAccount
  * @property [_writable_] stakePoolProgram
  * @property [] stakeProgram
@@ -57,6 +58,7 @@ export type PurchaseShareInstructionAccounts = {
   user: web3.PublicKey
   rampUserAccount: web3.PublicKey
   rampUserAccountLstVault: web3.PublicKey
+  rampUserAccountVault: web3.PublicKey
   sellerUserAccount: web3.PublicKey
   personalMarket: web3.PublicKey
   marketCurrency: web3.PublicKey
@@ -111,6 +113,11 @@ export function createPurchaseShareInstruction(
       isSigner: false,
     },
     {
+      pubkey: accounts.rampUserAccountVault,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
       pubkey: accounts.sellerUserAccount,
       isWritable: true,
       isSigner: false,
@@ -137,7 +144,7 @@ export function createPurchaseShareInstruction(
     },
     {
       pubkey: accounts.stakeReserve,
-      isWritable: false,
+      isWritable: true,
       isSigner: false,
     },
     {

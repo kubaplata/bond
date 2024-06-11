@@ -11,36 +11,19 @@ import * as web3 from '@solana/web3.js'
 
 /**
  * @category Instructions
- * @category CreatePersonalLst
+ * @category InitializeStakePool
  * @category generated
  */
-export type CreatePersonalLstInstructionArgs = {
-  lstName: string
-  lstSymbol: string
-  lstMetadata: string
-}
-/**
- * @category Instructions
- * @category CreatePersonalLst
- * @category generated
- */
-export const createPersonalLstStruct = new beet.FixableBeetArgsStruct<
-  CreatePersonalLstInstructionArgs & {
-    instructionDiscriminator: number[] /* size: 8 */
-  }
->(
-  [
-    ['instructionDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)],
-    ['lstName', beet.utf8String],
-    ['lstSymbol', beet.utf8String],
-    ['lstMetadata', beet.utf8String],
-  ],
-  'CreatePersonalLstInstructionArgs'
+export const initializeStakePoolStruct = new beet.BeetArgsStruct<{
+  instructionDiscriminator: number[] /* size: 8 */
+}>(
+  [['instructionDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)]],
+  'InitializeStakePoolInstructionArgs'
 )
 /**
- * Accounts required by the _createPersonalLst_ instruction
+ * Accounts required by the _initializeStakePool_ instruction
  *
- * @property [_writable_, **signer**] user
+ * @property [_writable_, **signer**] admin
  * @property [_writable_] stakePoolProgram
  * @property [] stakeProgram
  * @property [_writable_] stakePool
@@ -49,16 +32,14 @@ export const createPersonalLstStruct = new beet.FixableBeetArgsStruct<
  * @property [_writable_] stakeReserve
  * @property [_writable_] personalLstMint
  * @property [_writable_] managerPoolAccount
- * @property [_writable_] rampUserAccount
- * @property [_writable_] personalMarket
  * @property [_writable_] personalLstMetadata
  * @property [] metaplexProgram
  * @category Instructions
- * @category CreatePersonalLst
+ * @category InitializeStakePool
  * @category generated
  */
-export type CreatePersonalLstInstructionAccounts = {
-  user: web3.PublicKey
+export type InitializeStakePoolInstructionAccounts = {
+  admin: web3.PublicKey
   stakePoolProgram: web3.PublicKey
   stakeProgram: web3.PublicKey
   stakePool: web3.PublicKey
@@ -67,8 +48,6 @@ export type CreatePersonalLstInstructionAccounts = {
   stakeReserve: web3.PublicKey
   personalLstMint: web3.PublicKey
   managerPoolAccount: web3.PublicKey
-  rampUserAccount: web3.PublicKey
-  personalMarket: web3.PublicKey
   personalLstMetadata: web3.PublicKey
   tokenProgram?: web3.PublicKey
   systemProgram?: web3.PublicKey
@@ -77,32 +56,28 @@ export type CreatePersonalLstInstructionAccounts = {
   anchorRemainingAccounts?: web3.AccountMeta[]
 }
 
-export const createPersonalLstInstructionDiscriminator = [
-  241, 115, 13, 240, 50, 127, 113, 211,
+export const initializeStakePoolInstructionDiscriminator = [
+  48, 189, 243, 73, 19, 67, 36, 83,
 ]
 
 /**
- * Creates a _CreatePersonalLst_ instruction.
+ * Creates a _InitializeStakePool_ instruction.
  *
  * @param accounts that will be accessed while the instruction is processed
- * @param args to provide as instruction data to the program
- *
  * @category Instructions
- * @category CreatePersonalLst
+ * @category InitializeStakePool
  * @category generated
  */
-export function createCreatePersonalLstInstruction(
-  accounts: CreatePersonalLstInstructionAccounts,
-  args: CreatePersonalLstInstructionArgs,
+export function createInitializeStakePoolInstruction(
+  accounts: InitializeStakePoolInstructionAccounts,
   programId = new web3.PublicKey('EXSphcPS7fXSnmVPqo8Q5Hax5yRnc3t4MFWD1NozvMro')
 ) {
-  const [data] = createPersonalLstStruct.serialize({
-    instructionDiscriminator: createPersonalLstInstructionDiscriminator,
-    ...args,
+  const [data] = initializeStakePoolStruct.serialize({
+    instructionDiscriminator: initializeStakePoolInstructionDiscriminator,
   })
   const keys: web3.AccountMeta[] = [
     {
-      pubkey: accounts.user,
+      pubkey: accounts.admin,
       isWritable: true,
       isSigner: true,
     },
@@ -143,16 +118,6 @@ export function createCreatePersonalLstInstruction(
     },
     {
       pubkey: accounts.managerPoolAccount,
-      isWritable: true,
-      isSigner: false,
-    },
-    {
-      pubkey: accounts.rampUserAccount,
-      isWritable: true,
-      isSigner: false,
-    },
-    {
-      pubkey: accounts.personalMarket,
       isWritable: true,
       isSigner: false,
     },

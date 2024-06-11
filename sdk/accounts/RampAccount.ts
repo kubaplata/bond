@@ -17,6 +17,7 @@ import { Share, shareBeet } from '../types/Share'
  */
 export type RampAccountArgs = {
   id: beet.bignum
+  vault: web3.PublicKey
   displayName: string
   heldShares: Share[]
   personalMarket: web3.PublicKey
@@ -35,6 +36,7 @@ export const rampAccountDiscriminator = [225, 181, 38, 249, 28, 105, 184, 93]
 export class RampAccount implements RampAccountArgs {
   private constructor(
     readonly id: beet.bignum,
+    readonly vault: web3.PublicKey,
     readonly displayName: string,
     readonly heldShares: Share[],
     readonly personalMarket: web3.PublicKey,
@@ -48,6 +50,7 @@ export class RampAccount implements RampAccountArgs {
   static fromArgs(args: RampAccountArgs) {
     return new RampAccount(
       args.id,
+      args.vault,
       args.displayName,
       args.heldShares,
       args.personalMarket,
@@ -172,6 +175,7 @@ export class RampAccount implements RampAccountArgs {
         }
         return x
       })(),
+      vault: this.vault.toBase58(),
       displayName: this.displayName,
       heldShares: this.heldShares,
       personalMarket: this.personalMarket.toBase58(),
@@ -194,6 +198,7 @@ export const rampAccountBeet = new beet.FixableBeetStruct<
   [
     ['accountDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)],
     ['id', beet.u64],
+    ['vault', beetSolana.publicKey],
     ['displayName', beet.utf8String],
     ['heldShares', beet.array(shareBeet)],
     ['personalMarket', beetSolana.publicKey],

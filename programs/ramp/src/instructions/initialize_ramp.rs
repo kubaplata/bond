@@ -14,16 +14,17 @@ pub fn initialize_ramp(
     let default_lst = &mut ctx.accounts.default_lst;
     let default_stake_pool = &mut ctx.accounts.default_stake_pool;
 
-    ramp.admin = admin.key();
-    ramp.index = 0;
-
     require!(
         default_stake_pool.pool_mint == default_lst.key(),
         RampError::StakePoolMintMismatch
     );
 
+    ramp.admin = admin.key();
     ramp.default_currency = default_lst.key();
     ramp.default_stake_pool = default_stake_pool.key();
+    ramp.index = 0;
+
+    msg!("Admin: {}", ramp.admin.key().to_string());
 
     Ok(())
 }

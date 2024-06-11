@@ -36,18 +36,13 @@ use mpl_token_metadata::{
 
 const MAX_VALIDATORS: u32 = 8;
 
-pub fn create_personal_lst(
-    ctx: Context<CreatePersonalLst>,
-    lst_name: String,
-    lst_symbol: String,
-    lst_metadata_uri: String,
+pub fn initialize_stake_pool(
+    ctx: Context<InitializeStakePool>
 ) -> Result<()> {
-    let user = &mut ctx.accounts.user;
+    let admin = &mut ctx.accounts.admin;
     let stake_program = &mut ctx.accounts.stake_program;
     let stake_pool_program = &mut ctx.accounts.stake_pool_program;
     let stake_pool = &mut ctx.accounts.stake_pool;
-    let ramp_user_account = &mut ctx.accounts.ramp_user_account;
-    let personal_market = &mut ctx.accounts.personal_market;
     let stake_reserve = &mut ctx.accounts.stake_reserve;
     let validator_list = &mut ctx.accounts.validator_list;
     let personal_lst_mint = &mut ctx.accounts.personal_lst_mint;
@@ -125,8 +120,8 @@ pub fn create_personal_lst(
     let initialize_stake_pool_ix = initialize(
         stake_pool_program.key,
         stake_pool.key,
-        &ramp_user_account.key(),
-        &ramp_user_account.key(),
+        &admin.key(),
+        &admin.key(),
         &withdraw_authority.key(),
         &validator_list.key(),
         &stake_reserve.key(),
@@ -141,20 +136,12 @@ pub fn create_personal_lst(
         MAX_VALIDATORS
     );
 
-    let signer_seeds = &[
-        "user_account".as_bytes(),
-        &user.key().to_bytes(),
-        &[ctx.bumps.ramp_user_account]
-    ];
-
-    msg!("Rent: {}", rent.key());
-
-    invoke_signed(
+    invoke(
         &initialize_stake_pool_ix, 
         &[
             stake_pool_program.to_account_info(),
             stake_pool.to_account_info(),
-            ramp_user_account.to_account_info(),
+            admin.to_account_info(),
             validator_list.to_account_info(),
             stake_reserve.to_account_info(),
             personal_lst_mint.to_account_info(),
@@ -162,51 +149,18 @@ pub fn create_personal_lst(
             token_program.to_account_info(),
             rent.to_account_info(),
             withdraw_authority.to_account_info()
-        ], 
-        &[signer_seeds]
+        ]
     )?;
-
-    let lst_metadata_ix = create_token_metadata(
-        stake_pool_program.key,
-        stake_pool.key,
-        &ramp_user_account.key(),
-        &personal_lst_mint.key(),
-        user.key,
-        lst_name,
-        lst_symbol,
-        lst_metadata_uri
-    );
-
-    invoke_signed(
-        &lst_metadata_ix, 
-        &[
-            stake_pool_program.to_account_info(),
-            stake_pool.to_account_info(),
-            ramp_user_account.to_account_info(),
-            personal_lst_mint.to_account_info(),
-            user.to_account_info(),
-            rent.to_account_info(),
-            personal_lst_metadata.to_account_info(),
-            withdraw_authority.to_account_info(),
-            metadata_program.to_account_info()
-        ], 
-        &[signer_seeds]
-    )?;
-
-    personal_market.market_currency = personal_lst_mint.key();
-    personal_market.market_stake_pool = stake_pool.key();
-    ramp_user_account.personal_lst = Some(personal_lst_mint.key());
-    ramp_user_account.personal_stake_pool = Some(stake_pool.key());
 
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct CreatePersonalLst<'info> {
+pub struct InitializeStakePool<'info> {
     #[account(
         mut,
     )]
-    pub user: Signer<'info>,
+    pub admin: Signer<'info>,
 
     /// CHECK: This is safe. Checking program ID directly.
     #[account(
@@ -226,10 +180,10 @@ pub struct CreatePersonalLst<'info> {
     /// CHECK: Not reading/writing from/to this account. Only using for CPI to stake pool program.
     #[account(
         init,
-        payer = user,
+        payer = admin,
         seeds = [
-            &user.key().to_bytes(),
-            "personal_stake_pool".as_bytes(),
+            &admin.key().to_bytes(),
+            "ramp_stake_pool".as_bytes(),
         ],
         bump,
         space = 656,
@@ -301,34 +255,10 @@ pub struct CreatePersonalLst<'info> {
     #[account(
         mut,
         token::mint = personal_lst_mint,
-        token::authority = ramp_user_account,
+        token::authority = admin,
         token::token_program = token_program,
     )]
     pub manager_pool_account: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        mut,
-        seeds = [
-            "user_account".as_bytes(),
-            &user.key().to_bytes()
-        ],
-        bump,
-
-        // Make sure user does not have personal LST yet.
-        constraint = ramp_user_account.personal_lst.is_none(),
-    )]
-    pub ramp_user_account: Box<Account<'info, RampAccount>>,
-
-    #[account(
-        mut,
-        seeds = [
-            "personal_market".as_bytes(),
-            &user.key().to_bytes()
-        ],
-        bump,
-        constraint = personal_market.id == ramp_user_account.id
-    )]
-    pub personal_market: Box<Account<'info, PersonalMarket>>,
 
     /// CHECK: Safe, we're not writing to this account. Will be validated by SPL Stake Pool CPI.
     #[account(

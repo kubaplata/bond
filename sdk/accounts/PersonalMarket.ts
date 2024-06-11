@@ -23,6 +23,7 @@ export type PersonalMarketArgs = {
   id: beet.bignum
   holders: Share[]
   marketCurrency: web3.PublicKey
+  marketStakePool: web3.PublicKey
   totalShares: beet.bignum
   totalTrades: beet.bignum
   totalVolume: beet.bignum
@@ -44,6 +45,7 @@ export class PersonalMarket implements PersonalMarketArgs {
     readonly id: beet.bignum,
     readonly holders: Share[],
     readonly marketCurrency: web3.PublicKey,
+    readonly marketStakePool: web3.PublicKey,
     readonly totalShares: beet.bignum,
     readonly totalTrades: beet.bignum,
     readonly totalVolume: beet.bignum,
@@ -60,6 +62,7 @@ export class PersonalMarket implements PersonalMarketArgs {
       args.id,
       args.holders,
       args.marketCurrency,
+      args.marketStakePool,
       args.totalShares,
       args.totalTrades,
       args.totalVolume,
@@ -187,6 +190,7 @@ export class PersonalMarket implements PersonalMarketArgs {
       })(),
       holders: this.holders,
       marketCurrency: this.marketCurrency.toBase58(),
+      marketStakePool: this.marketStakePool.toBase58(),
       totalShares: (() => {
         const x = <{ toNumber: () => number }>this.totalShares
         if (typeof x.toNumber === 'function') {
@@ -262,6 +266,7 @@ export const personalMarketBeet = new beet.FixableBeetStruct<
     ['id', beet.u64],
     ['holders', beet.array(shareBeet)],
     ['marketCurrency', beetSolana.publicKey],
+    ['marketStakePool', beetSolana.publicKey],
     ['totalShares', beet.u64],
     ['totalTrades', beet.u64],
     ['totalVolume', beet.u64],

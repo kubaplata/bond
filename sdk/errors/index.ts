@@ -302,6 +302,78 @@ createErrorFromCodeLookup.set(0x177c, () => new IndexMismatchError())
 createErrorFromNameLookup.set('IndexMismatch', () => new IndexMismatchError())
 
 /**
+ * InvalidRemainingAccountsSchema: 'Invalid remaining_accounts schema.'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidRemainingAccountsSchemaError extends Error {
+  readonly code: number = 0x177d
+  readonly name: string = 'InvalidRemainingAccountsSchema'
+  constructor() {
+    super('Invalid remaining_accounts schema.')
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, InvalidRemainingAccountsSchemaError)
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(
+  0x177d,
+  () => new InvalidRemainingAccountsSchemaError()
+)
+createErrorFromNameLookup.set(
+  'InvalidRemainingAccountsSchema',
+  () => new InvalidRemainingAccountsSchemaError()
+)
+
+/**
+ * InvalidMetadataAddress: 'Invalid personal LST metadata account address.'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidMetadataAddressError extends Error {
+  readonly code: number = 0x177e
+  readonly name: string = 'InvalidMetadataAddress'
+  constructor() {
+    super('Invalid personal LST metadata account address.')
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, InvalidMetadataAddressError)
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x177e, () => new InvalidMetadataAddressError())
+createErrorFromNameLookup.set(
+  'InvalidMetadataAddress',
+  () => new InvalidMetadataAddressError()
+)
+
+/**
+ * StakePoolMintMismatch: 'Provided LST mint does not match Stake Pool data.'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class StakePoolMintMismatchError extends Error {
+  readonly code: number = 0x177f
+  readonly name: string = 'StakePoolMintMismatch'
+  constructor() {
+    super('Provided LST mint does not match Stake Pool data.')
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, StakePoolMintMismatchError)
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x177f, () => new StakePoolMintMismatchError())
+createErrorFromNameLookup.set(
+  'StakePoolMintMismatch',
+  () => new StakePoolMintMismatchError()
+)
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

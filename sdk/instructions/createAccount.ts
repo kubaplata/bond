@@ -44,6 +44,7 @@ export const createAccountStruct = new beet.FixableBeetArgsStruct<
  * @property [_writable_, **signer**] user
  * @property [_writable_] rampProtocol
  * @property [_writable_] userRampAccount
+ * @property [_writable_] userRampAccountVault
  * @property [_writable_] personalMarket
  * @category Instructions
  * @category CreateAccount
@@ -53,6 +54,7 @@ export type CreateAccountInstructionAccounts = {
   user: web3.PublicKey
   rampProtocol: web3.PublicKey
   userRampAccount: web3.PublicKey
+  userRampAccountVault: web3.PublicKey
   personalMarket: web3.PublicKey
   systemProgram?: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
@@ -94,6 +96,11 @@ export function createCreateAccountInstruction(
     },
     {
       pubkey: accounts.userRampAccount,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.userRampAccountVault,
       isWritable: true,
       isSigner: false,
     },

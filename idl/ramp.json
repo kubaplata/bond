@@ -3,6 +3,113 @@
   "name": "ramp",
   "instructions": [
     {
+      "name": "initializeStakePool",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakePoolProgram",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakePool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "validatorList",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "personalLstMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerPoolAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "personalLstMetadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "metaplexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeRamp",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "ramp",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "defaultStakePool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "defaultLst",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "createAccount",
       "accounts": [
         {
@@ -17,6 +124,11 @@
         },
         {
           "name": "userRampAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userRampAccountVault",
           "isMut": true,
           "isSigner": false
         },
@@ -103,6 +215,11 @@
           "isSigner": false
         },
         {
+          "name": "personalLstMetadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -111,9 +228,32 @@
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "metaplexProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "lstName",
+          "type": "string"
+        },
+        {
+          "name": "lstSymbol",
+          "type": "string"
+        },
+        {
+          "name": "lstMetadata",
+          "type": "string"
+        }
+      ]
     },
     {
       "name": "purchaseShare",
@@ -130,6 +270,11 @@
         },
         {
           "name": "rampUserAccountLstVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rampUserAccountVault",
           "isMut": true,
           "isSigner": false
         },
@@ -160,7 +305,7 @@
         },
         {
           "name": "stakeReserve",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -220,6 +365,10 @@
             "type": "publicKey"
           },
           {
+            "name": "marketStakePool",
+            "type": "publicKey"
+          },
+          {
             "name": "totalShares",
             "type": "u64"
           },
@@ -256,6 +405,10 @@
           {
             "name": "id",
             "type": "u64"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
           },
           {
             "name": "displayName",
@@ -296,6 +449,10 @@
           {
             "name": "index",
             "type": "u64"
+          },
+          {
+            "name": "defaultStakePool",
+            "type": "publicKey"
           },
           {
             "name": "defaultCurrency",
@@ -413,6 +570,21 @@
       "code": 6012,
       "name": "IndexMismatch",
       "msg": "Account initialized with incorrect index."
+    },
+    {
+      "code": 6013,
+      "name": "InvalidRemainingAccountsSchema",
+      "msg": "Invalid remaining_accounts schema."
+    },
+    {
+      "code": 6014,
+      "name": "InvalidMetadataAddress",
+      "msg": "Invalid personal LST metadata account address."
+    },
+    {
+      "code": 6015,
+      "name": "StakePoolMintMismatch",
+      "msg": "Provided LST mint does not match Stake Pool data."
     }
   ],
   "metadata": {

@@ -1,3 +1,5 @@
 export * from './createAccount'
 export * from './createPersonalLst'
+export * from './initializeRamp'
+export * from './initializeStakePool'
 export * from './purchaseShare'

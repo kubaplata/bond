@@ -220,34 +220,214 @@ describe("ramp", () => {
         rampProtocol = ramp;
     });
 
-    it('Initializes Ramp protocol.', async () => {
+    it('Initializes Ramp LST and Ramp protocol.', async () => {
+        const personalLstMint = await createToken(
+            provider.connection,
+            provider
+        );
 
-        const defaultLst = Keypair.generate().publicKey;
+        const [stakePool] = PublicKey.findProgramAddressSync(
+            [
+                provider.wallet.publicKey.toBuffer(),
+                Buffer.from("ramp_stake_pool")
+            ],
+            program.programId
+        );
 
-        await program
+        const [withdrawAuthority] = PublicKey.findProgramAddressSync(
+            [
+                stakePool.toBuffer(),
+                Buffer.from("withdraw")
+            ],
+            stakePoolProgram
+        );
+
+        console.log({ withdrawAuthority: withdrawAuthority.toString() });
+
+        await transferAuthority(
+            personalLstMint,
+            provider,
+            AuthorityType.MintTokens,
+            withdrawAuthority
+        );
+
+        await transferAuthority(
+            personalLstMint,
+            provider,
+            AuthorityType.FreezeAccount,
+            null
+        );
+
+        const managerPoolAccount = getAssociatedTokenAddressSync(
+            personalLstMint,
+            provider.publicKey,
+            true
+        );
+
+        await initializeAta(
+            personalLstMint,
+            provider.publicKey,
+            provider
+        );
+
+        // const [stakeReserve] = PublicKey.findProgramAddressSync(
+        //     [
+        //         stakePool.toBuffer(),
+        //         Buffer.from("stake_reserve")
+        //     ],
+        //     program.programId
+        // );
+
+        const stakeReserve = Keypair.generate();
+
+        let lamports = await provider.connection.getMinimumBalanceForRentExemption(200, "confirmed");
+        const stakeReserveIx = SystemProgram.createAccount({
+            programId: StakeProgram.programId,
+            space: 200,
+            lamports,
+            fromPubkey: provider.publicKey,
+            newAccountPubkey: stakeReserve.publicKey
+        });
+
+        // const [validatorList] = PublicKey.findProgramAddressSync(
+        //     [
+        //         stakePool.toBuffer(),
+        //         Buffer.from("ramp_val_list")
+        //     ],
+        //     program.programId
+        // );
+
+        const validatorList = Keypair.generate();
+        lamports = await provider.connection.getMinimumBalanceForRentExemption(8 + 4 + 1 + 4 + (8 * (73)));
+        const validatorListIx = SystemProgram.createAccount({
+            programId: stakePoolProgram,
+            space: 8 + 4 + 1 + 4 + (8 * (73)),
+            lamports,
+            fromPubkey: provider.publicKey,
+            newAccountPubkey: validatorList.publicKey
+        });
+
+        const [depositAuthority] = PublicKey.findProgramAddressSync(
+            [
+                stakePool.toBuffer(),
+                Buffer.from("deposit"),
+            ],
+            stakePoolProgram,
+        )
+
+        const personalLstMetadata = metaplex
+            .nfts()
+            .pdas()
+            .metadata({
+                mint: personalLstMint
+            });
+
+        const ix = await program
+            .methods
+            .initializeStakePool()
+            .accounts({
+                admin: provider.wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                stakeProgram: StakeProgram.programId,
+                stakePool,
+                stakeReserve: stakeReserve.publicKey,
+                validatorList: validatorList.publicKey,
+                stakePoolProgram,
+                personalLstMint,
+                withdrawAuthority,
+                managerPoolAccount,
+                rent: SYSVAR_RENT_PUBKEY,
+                metaplexProgram: new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+                personalLstMetadata
+            })
+            .instruction();
+
+        const tx = new Transaction();
+
+        tx.add(stakeReserveIx);
+        tx.add(validatorListIx);
+        tx.add(ix);
+
+        const {
+            lastValidBlockHeight,
+            blockhash
+        } = await provider.connection.getLatestBlockhash();
+
+        tx.feePayer = provider.publicKey;
+        tx.recentBlockhash = blockhash;
+
+        tx.sign(stakeReserve, validatorList);
+
+        const signed = await provider.wallet.signTransaction(tx);
+
+        const {
+            epoch
+        } = await provider.connection.getEpochInfo();
+        const txId = await provider.connection.sendRawTransaction(signed.serialize(), { skipPreflight: true });
+
+        await provider.connection.confirmTransaction({
+            blockhash,
+            lastValidBlockHeight,
+            signature: txId
+        }, "confirmed");
+
+        const txId2 = await program
             .methods
             .initializeRamp()
             .accounts({
+                admin: provider.publicKey,
                 ramp: rampProtocol,
                 systemProgram: SystemProgram.programId,
-                admin: provider.publicKey,
-                defaultLst,
-                defaultStakePool
+                defaultLst: personalLstMint,
+                defaultStakePool: stakePool
             })
             .rpc();
+
+        console.log({
+            ramp: rampProtocol.toString(),
+            systemProgram: SystemProgram.programId.toString(),
+            admin: provider.publicKey.toString(),
+            defaultLst: personalLstMint.toString(),
+            defaultStakePool: stakePool.toString()
+        });
+
+        {
+            const {
+                lastValidBlockHeight,
+                blockhash
+            } = await provider.connection.getLatestBlockhash();
+
+            await provider.connection.confirmTransaction({
+                blockhash,
+                lastValidBlockHeight,
+                signature: txId2
+            }, "confirmed");
+        }
+
+        const parsedTx = await provider.connection.getParsedTransaction(txId2, "confirmed");
+        if (!parsedTx?.meta) throw null;
+
+        const {
+            logMessages
+        } = parsedTx.meta;
+
+        console.log(logMessages);
 
         const {
             admin,
             index,
-            defaultCurrency
+            defaultCurrency,
         } = await RampProtocol.fromAccountAddress(
             provider.connection,
             rampProtocol
         );
 
+        console.log({ admin: admin.toString(), defaultCurrency: defaultCurrency.toString() });
+
         expect(index.toString()).eq("0");
         expect(admin.toString()).eq(provider.publicKey.toString());
-        expect(defaultCurrency.toString()).eq(defaultLst.toString());
+        expect(defaultCurrency.toString()).eq(personalLstMint.toString());
     });
 
     it("Creates account and personal market.", async () => {
@@ -267,6 +447,14 @@ describe("ramp", () => {
             program.programId
         );
 
+        const [userRampAccountVault] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("vault"),
+                userRampAccount.toBuffer(),
+            ],
+            program.programId
+        );
+
         await program
             .methods
             .createAccount(
@@ -278,7 +466,8 @@ describe("ramp", () => {
                 user: provider.wallet.publicKey,
                 personalMarket,
                 userRampAccount,
-                rampProtocol
+                rampProtocol,
+                userRampAccountVault
             })
             .rpc();
     });
@@ -449,13 +638,22 @@ describe("ramp", () => {
         const {
             epoch
         } = await provider.connection.getEpochInfo();
-        const txId = await provider.connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+        const txId = await provider.connection.sendRawTransaction(signed.serialize(), { skipPreflight: true });
 
         await provider.connection.confirmTransaction({
             blockhash,
             lastValidBlockHeight,
             signature: txId
         }, "confirmed");
+
+        const parsedTx = await provider.connection.getParsedTransaction(txId, "confirmed");
+        if (!parsedTx?.meta) throw null;
+
+        const {
+            logMessages
+        } = parsedTx.meta;
+
+        console.log(logMessages);
 
         const {
             account: {
@@ -597,6 +795,14 @@ describe("ramp", () => {
             program.programId
         );
 
+        const [rampUserAccountVault] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("vault"),
+                buyerRampAccount.toBuffer(),
+            ],
+            program.programId
+        );
+
         const [buyerPersonalMarket] = PublicKey.findProgramAddressSync(
             [
                 Buffer.from("personal_market"),
@@ -616,19 +822,14 @@ describe("ramp", () => {
                 personalMarket: buyerPersonalMarket,
                 rampProtocol,
                 systemProgram: SystemProgram.programId,
-                userRampAccount: buyerRampAccount
+                userRampAccount: buyerRampAccount,
+                userRampAccountVault: rampUserAccountVault
             })
             .instruction();
 
         const {
-            personalStakePool
-        } = await RampAccount.fromAccountAddress(
-            provider.connection,
-            creatorRampAccount
-        );
-
-        const {
             marketCurrency,
+            marketStakePool
         } = await PersonalMarket.fromAccountAddress(
             provider.connection,
             personalMarket
@@ -637,8 +838,13 @@ describe("ramp", () => {
         const stakePoolData = await stakePoolInfo(
             provider.connection,
             // @ts-ignore
-            personalStakePool
+            marketStakePool
         );
+
+        console.log({
+            poolMint: stakePoolData.poolMint,
+            marketCurrency: marketCurrency.toString()
+        });
 
         const {
             validatorListStorageAccount,
@@ -675,12 +881,13 @@ describe("ramp", () => {
                 stakeProgram: StakeProgram.programId,
                 marketCurrency,
                 // @ts-ignore // We are sure that personal stake pool exists
-                stakePool: personalStakePool,
+                stakePool: marketStakePool,
                 stakeReserve: new PublicKey(reserveStake),
                 managerFeeAccount: new PublicKey(managerFeeAccount),
                 withdrawAuthority: new PublicKey(poolWithdrawAuthority),
                 sellerUserAccount: creatorRampAccount,
-                rampUserAccountLstVault
+                rampUserAccountLstVault,
+                rampUserAccountVault
             })
             .instruction();
 

@@ -9,6 +9,7 @@ pub fn create_account(
 ) -> Result<()> {
     let ramp_protocol = &mut ctx.accounts.ramp_protocol;
     let user_ramp_account = &mut ctx.accounts.user_ramp_account;
+    let user_ramp_account_vault = &mut ctx.accounts.user_ramp_account_vault;
     let personal_market = &mut ctx.accounts.personal_market;
 
     user_ramp_account.display_name = display_name;
@@ -17,6 +18,7 @@ pub fn create_account(
     user_ramp_account.personal_lst = None;
     user_ramp_account.personal_market = personal_market.key();
     user_ramp_account.personal_stake_pool = None;
+    user_ramp_account.vault = user_ramp_account_vault.key();
 
     personal_market.id = ramp_protocol.index;
 
@@ -60,10 +62,20 @@ pub struct CreateAccount<'info> {
             "user_account".as_bytes(),
             &user.key().to_bytes()
         ],
-        space = 8 + 8 + (1 * 32) + (2 * (1 + 32)) + 4 + 8 + display_name.len(),
+        space = 8 + 8 + (2 * 32) + (2 * (1 + 32)) + 4 + 8 + display_name.len(),
         bump
     )]
     pub user_ramp_account: Account<'info, RampAccount>,
+
+    #[account(
+        mut,
+        seeds = [
+            "vault".as_bytes(),
+            &user_ramp_account.key().to_bytes()
+        ],
+        bump
+    )]
+    pub user_ramp_account_vault: SystemAccount<'info>,
 
     #[account(
         init,

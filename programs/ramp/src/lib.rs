@@ -15,6 +15,16 @@ declare_id!("EXSphcPS7fXSnmVPqo8Q5Hax5yRnc3t4MFWD1NozvMro");
 pub mod ramp {
     use super::*;
 
+    // Helper function to initialize rampSOL stake pool and LST before initializing protocol.
+    // Remove on production.
+    pub fn initialize_stake_pool(
+        ctx: Context<InitializeStakePool>
+    ) -> Result<()> {
+        instructions::initialize_stake_pool(
+            ctx
+        )
+    }
+
     pub fn initialize_ramp(
         ctx: Context<InitializeRamp>
     ) -> Result<()> {
