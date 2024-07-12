@@ -59,7 +59,7 @@ pub fn purchase_share(
     // TODO: Transfer to temporary system-program-owned vault instead of PDA.
     transfer(
         CpiContext::new(
-            system_program.to_account_info(), 
+            system_program.to_account_info(),
             Transfer {
                 from: user.to_account_info(),
                 to: ramp_user_account_vault.to_account_info()
@@ -69,16 +69,16 @@ pub fn purchase_share(
     )?;
 
     let deposit_sol_ix = deposit_sol(
-        &stake_pool_program.key(), 
-        &stake_pool.key(), 
+        &stake_pool_program.key(),
+        &stake_pool.key(),
         &withdraw_authority.key(), 
-        &stake_reserve.key(), 
+        &stake_reserve.key(),
         &ramp_user_account_vault.key(),
         &ramp_user_account_lst_vault.key(), 
         &manager_fee_account.key(), 
         &ramp_user_account_lst_vault.key(), 
-        &market_currency.key(), 
-        &token_program.key(), 
+        &market_currency.key(),
+        &token_program.key(),
         price
     );
 
